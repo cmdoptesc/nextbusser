@@ -11,14 +11,14 @@ An early version of nextbusser was used for my muniNow app:
 # Usage
 
 ```javascript
+// initialise a nextBusser object
 var nb = makeNextBusser('sf-muni');
 
 // to change agencies
 nb.setAgency('actransit');
 
 // to get all the routes -- this can take a callback or return a promise
-
-var promise = nb.routesList(callback);
+var promise = nb.routesList(callerback);
 
 promise.done(function(list) {
   console.log(list);
@@ -37,6 +37,7 @@ jQuery 1.10.x or 2.x
 - add in vehicle locations  
 
 
-- al lin, sep 2013
 
+# License
+al lin, sep 2013  
 MIT, do as you will license..
