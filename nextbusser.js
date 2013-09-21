@@ -1,10 +1,10 @@
 /*
-  nextbusser is a JavaScript library to query the NextBus API and parse
+  nextBusser is a JavaScript library to query the NextBus API and parse
   the resulting XML data. Callbacks can be provided to the functions, or they
   will return a basic jQuery promise that will have the methods .then(),
   .done(), and .fail().
 
-  An early version of nextbusser was used for my muniNow app:
+  An early version of nextBusser was used for my muniNow app:
     demo: http://bl.ocks.org/cmdoptesc/raw/6224455/
     git: http://github.com/cmdoptesc/muninow
 
@@ -13,7 +13,7 @@
   MIT, do as you will license..
 */
 
-var makeNextBusser = function(agencyTag) {
+var makeNextBusser = function(agencyTag, userOptions) {
 
   var apiUrl = 'http://webservices.nextbus.com/service/publicXMLFeed';
   var stopIdLength = 5;
@@ -46,7 +46,7 @@ var makeNextBusser = function(agencyTag) {
 
     cache: {},
     agencyTag: '',
-    options: {
+    _options: {
       cache: true
     },
 
@@ -69,10 +69,10 @@ var makeNextBusser = function(agencyTag) {
       // parse agencyList: http://webservices.nextbus.com/service/publicXMLFeed?command=agencyList
     parseXMLagencyList: function(xml, callback) {
       var agencies = [];
-      var agency = {};
+      var $agency, agency = {};
 
       $(xml).find("body > agency").each(function(indx, ag){
-        $agency = $(ag);
+        var $agency = $(ag);
         agency = {
           agencyTag: $agency.attr('tag'),
           title: $agency.attr('title'),
@@ -86,7 +86,7 @@ var makeNextBusser = function(agencyTag) {
       // parse routeList: http://webservices.nextbus.com/service/publicXMLFeed?command=routeList&a=sf-muni
     parseXMLrouteList: function(xml, callback) {
       var routes = [];
-      var route = {};
+      var $rt, route = {};
 
       $(xml).find("body > route").each(function(indx, rt){
         $rt = $(rt);
@@ -106,7 +106,7 @@ var makeNextBusser = function(agencyTag) {
       var $dir, dirTag;
 
       $(xml).find('direction').each(function(indx, dir){
-        var $dir = $(dir);
+        $dir = $(dir);
         dirTag = $dir.attr('tag');
         directions[dirTag] = {
           title : $dir.attr('title'),
@@ -241,19 +241,20 @@ var makeNextBusser = function(agencyTag) {
     },
 
       // retrieves the list of routes for a particular agency
-    routeList: function(agencyTag, callback) {
+    routeList: function(agencyQuery, callback) {
       var deferred = new $.Deferred();
+      var agencyTag;
 
         // checking inputs
-      if(_isFunction(agencyTag) && typeof callback === 'undefined') {
-        callback = agencyTag;
+      if(_isFunction(agencyQuery) && typeof callback === 'undefined') {
+        callback = agencyQuery;
         agencyTag = nb.agencyTag;
       } else {
-        agencyTag = _findTag(routeQuery, ['a', 'agencyTag', 'agency']) || nb.agencyTag;
+        agencyTag = _findTag(agencyQuery, ['a', 'agencyTag', 'agency']) || nb.agencyTag;
       }
 
         // checking and using cache if agency has been looked up
-      if(nb.options.cache && typeof nb.cache[agencyTag] !== 'undefined' && nb.cache[agencyTag].routeList) {
+      if(nb._options.cache && typeof nb.cache[agencyTag] !== 'undefined' && nb.cache[agencyTag].routeList) {
         if(callback && _isFunction(callback)) { callback(nb.cache[agencyTag].routeList); }
         deferred.resolve(nb.cache[agencyTag].routeList);
       } else {
@@ -271,7 +272,7 @@ var makeNextBusser = function(agencyTag) {
             var routes = nb.parseXMLrouteList(xml);
               // cache this info
             if(typeof nb.agencyTag === 'undefined') { nb.agencyTag = agencyTag; }
-            if(nb.options.cache && typeof nb.cache[agencyTag] === 'undefined') {
+            if(nb._options.cache && typeof nb.cache[agencyTag] === 'undefined') {
               nb.cache[agencyTag] = {};
               nb.cache[agencyTag].routeList = routes;
             }
@@ -300,7 +301,7 @@ var makeNextBusser = function(agencyTag) {
         agencyTag = _findTag(routeQuery, ['a', 'agencyTag', 'agency']);
       }
 
-      if(nb.options.cache && typeof nb.cache[agencyTag] !== 'undefined' && typeof nb.cache[agencyTag][routeTag] !== 'undefined') {
+      if(nb._options.cache && typeof nb.cache[agencyTag] !== 'undefined' && typeof nb.cache[agencyTag][routeTag] !== 'undefined') {
         if(callback && _isFunction(callback)) { callback(nb.cache[agencyTag][routeTag]); }
         deferred.resolve(nb.cache[agencyTag][routeTag]);
       } else {
@@ -317,7 +318,7 @@ var makeNextBusser = function(agencyTag) {
             if(typeof nb.agencyTag === 'undefined') { nb.agencyTag = agencyTag; }
 
             var routeInfo = nb.parseXMLrouteConfig(xml);
-            if(nb.options.cache) {
+            if(nb._options.cache) {
               if(typeof nb.cache[agencyTag] === 'undefined') { nb.cache[agencyTag] = {}; }
               nb.cache[agencyTag][routeTag] = routeInfo;
             }
@@ -425,6 +426,15 @@ var makeNextBusser = function(agencyTag) {
 
   if(typeof agencyTag === 'string') {
     nb.setAgency(agencyTag);
+  } else if(typeof userOptions === 'undefined') {
+    userOptions = agencyTag;
+  }
+  if(typeof userOptions !== 'undefined' && Object.prototype.toString.call(userOptions) === '[object Object]') {
+    for(var key in nb._options) {
+      if(typeof userOptions[key] !== 'undefined') {
+        nb._options[key] = userOptions[key];
+      }
+    }
   }
 
   return nb;
