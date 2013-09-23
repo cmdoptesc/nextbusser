@@ -66,159 +66,189 @@ var makeNextBusser = function(agencyTag, userOptions) {
       return (errorMsg.length > 0) ? errorMsg : false;
     },
 
-      // parse agencyList: http://webservices.nextbus.com/service/publicXMLFeed?command=agencyList
-    parseXMLagencyList: function(xml, callback) {
-      var agencies = [];
-      var $agency, agency = {};
+    parseXML: {
+        // parse agencyList: http://webservices.nextbus.com/service/publicXMLFeed?command=agencyList
+      agencyList: function(xml, callback) {
+        var agencies = [];
+        var $agency, agency = {};
 
-      $(xml).find("body > agency").each(function(indx, ag){
-        var $agency = $(ag);
-        agency = {
-          agencyTag: $agency.attr('tag'),
-          title: $agency.attr('title'),
-          regionTitle: $agency.attr('regionTitle')
-        };
-        agencies.push(agency);
-      });
-      return callback ? callback(agencies) : agencies;
-    },
-
-      // parse routeList: http://webservices.nextbus.com/service/publicXMLFeed?command=routeList&a=sf-muni
-    parseXMLrouteList: function(xml, callback) {
-      var routes = [];
-      var $rt, route = {};
-
-      $(xml).find("body > route").each(function(indx, rt){
-        $rt = $(rt);
-        route = {
-          routeTag: $rt.attr('tag'),
-          title: $rt.attr('title')
-        };
-        routes.push(route);
-      });
-      return callback ? callback(routes) : routes;
-    },
-
-      // parse routeConfig: http://webservices.nextbus.com/service/publicXMLFeed?command=routeConfig&a=sf-muni&r=J
-      // then passing it to a callback or as an object with keys `stopsInfo` and `directions`
-    parseXMLrouteConfig: function(xml, callback) {
-      var directions = {};
-      var $dir, dirTag;
-
-      $(xml).find('direction').each(function(indx, dir){
-        $dir = $(dir);
-        dirTag = $dir.attr('tag');
-        directions[dirTag] = {
-          title : $dir.attr('title'),
-          name : $dir.attr('name'),
-          dirTag: dirTag,
-          stops : []
-        };
-        $dir.find('stop').each(function(indx, stop) {
-          directions[dirTag].stops.push($(stop).attr('tag'));
+        $(xml).find("body > agency").each(function(indx, ag){
+          var $agency = $(ag);
+          agency = {
+            agencyTag: $agency.attr('tag'),
+            title: $agency.attr('title'),
+            regionTitle: $agency.attr('regionTitle')
+          };
+          agencies.push(agency);
         });
-      });
+        return callback ? callback(agencies) : agencies;
+      },
 
-      var $route = $(xml).find("body > route");
+        // parse routeList: http://webservices.nextbus.com/service/publicXMLFeed?command=routeList&a=sf-muni
+      routeList: function(xml, callback) {
+        var routes = [];
+        var $rt, route = {};
 
-      var stopsInfo = {
-        routeTag: $route.attr('tag'),
-        title: $route.attr('title'),
-        color: $route.attr('color'),
-        oppositeColor: $route.attr('oppositeColor')
-      };
+        $(xml).find("body > route").each(function(indx, rt){
+          $rt = $(rt);
+          route = {
+            routeTag: $rt.attr('tag'),
+            title: $rt.attr('title')
+          };
+          routes.push(route);
+        });
+        return callback ? callback(routes) : routes;
+      },
 
-      var $stop, stopTag;
+        // parse routeConfig: http://webservices.nextbus.com/service/publicXMLFeed?command=routeConfig&a=sf-muni&r=J
+        // then passing it to a callback or as an object with keys `stopsInfo` and `directions`
+      routeConfig: function(xml, callback) {
+        var directions = {};
+        var $dir, dirTag;
 
-      $(xml).find("body route > stop").each(function(indx, stop) {
-        $stop = $(stop);
-        stopTag = $stop.attr('tag');
-        stopsInfo[stopTag] = {
-          title : $stop.attr('title'),
-          lat : $stop.attr('lat'),
-          lon : $stop.attr('lon'),
-          stopId : $stop.attr('stopId')
+        $(xml).find('direction').each(function(indx, dir){
+          $dir = $(dir);
+          dirTag = $dir.attr('tag');
+          directions[dirTag] = {
+            title : $dir.attr('title'),
+            name : $dir.attr('name'),
+            dirTag: dirTag,
+            stops : []
+          };
+          $dir.find('stop').each(function(indx, stop) {
+            directions[dirTag].stops.push($(stop).attr('tag'));
+          });
+        });
+
+        var $route = $(xml).find("body > route");
+
+        var stopsInfo = {
+          routeTag: $route.attr('tag'),
+          title: $route.attr('title'),
+          color: $route.attr('color'),
+          oppositeColor: $route.attr('oppositeColor')
         };
-      });
 
-      return callback ? callback(stopsInfo, directions) : {stopsInfo:stopsInfo, directions:directions};
-    },
+        var $stop, stopTag;
 
-      // parses predictions for individual *and* multiple stops:
-      //  http://webservices.nextbus.com/service/publicXMLFeed?command=predictions&a=sf-muni&r=5&s=5684
-      //  http://webservices.nextbus.com/service/publicXMLFeed?command=predictionsForMultiStops&a=sf-muni&stops=5|5684&stops=38|5684&stops=38|5689
-      //  returns an object of stops of routes with an array of prediction objects:
-      /*    {
-              stopTag: {
-                routeTag: [
-                  {
-                    dirTag: direction info,
-                    seconds: time to stop in seconds,
-                    vehicle: vehicle id,
-                    stopTag: stop tag again,
-                    routeTag: route tag again
-                  }
-                ]
+        $(xml).find("body route > stop").each(function(indx, stop) {
+          $stop = $(stop);
+          stopTag = $stop.attr('tag');
+          stopsInfo[stopTag] = {
+            title : $stop.attr('title'),
+            lat : $stop.attr('lat'),
+            lon : $stop.attr('lon'),
+            stopId : $stop.attr('stopId')
+          };
+        });
+
+        return callback ? callback(stopsInfo, directions) : {stopsInfo:stopsInfo, directions:directions};
+      },
+
+        // parses predictions for individual *and* multiple stops:
+        //  http://webservices.nextbus.com/service/publicXMLFeed?command=predictions&a=sf-muni&r=5&s=5684
+        //  http://webservices.nextbus.com/service/publicXMLFeed?command=predictionsForMultiStops&a=sf-muni&stops=5|5684&stops=38|5684&stops=38|5689
+        //  returns an object of stops of routes with an array of prediction objects:
+        /*    {
+                stopTag: {
+                  routeTag: [
+                    {
+                      dirTag: direction info,
+                      seconds: time to stop in seconds,
+                      vehicle: vehicle id,
+                      stopTag: stop tag again,
+                      routeTag: route tag again
+                    }
+                  ]
+                }
               }
-            }
-      */
-    parseXMLpredictions: function(xml, callback) {
-      var allPredictions = {};
-      var $pr, prediction;
-      var $rt, routeTag, stopTag;
+        */
+      predictions: function(xml, callback) {
+        var allPredictions = {};
+        var $pr, prediction;
+        var $rt, routeTag, stopTag;
 
-      $(xml).find('body > predictions').each(function(indx, rt){
-        $rt = $(rt);
-        routeTag = $rt.attr('routeTag');
-        stopTag = $rt.attr('stopTag');
+        $(xml).find('body > predictions').each(function(indx, rt){
+          $rt = $(rt);
+          routeTag = $rt.attr('routeTag');
+          stopTag = $rt.attr('stopTag');
 
-        var routePredictions = [];
-        $(rt).find('prediction').each(function(indx, pr) {
-          $pr = $(pr);
-          prediction = {
-            routeTag: routeTag,
-            stopTag: stopTag,
-            seconds: $pr.attr('seconds'),
-            vehicle: $pr.attr('vehicle'),
-            dirTag: $pr.attr('dirTag')
-          };
-          routePredictions.push(prediction);
+          var routePredictions = [];
+          $(rt).find('prediction').each(function(indx, pr) {
+            $pr = $(pr);
+            prediction = {
+              routeTag: routeTag,
+              stopTag: stopTag,
+              seconds: $pr.attr('seconds'),
+              vehicle: $pr.attr('vehicle'),
+              dirTag: $pr.attr('dirTag')
+            };
+            routePredictions.push(prediction);
+          });
+          if(typeof allPredictions[stopTag] === 'undefined') { allPredictions[stopTag] = {}; }
+          allPredictions[stopTag][routeTag] = routePredictions;
         });
-        if(typeof allPredictions[stopTag] === 'undefined') { allPredictions[stopTag] = {}; }
-        allPredictions[stopTag][routeTag] = routePredictions;
-      });
 
-      return callback ? callback(allPredictions) : allPredictions;
+        return callback ? callback(allPredictions) : allPredictions;
+      },
+
+        // does the same parsing as above (parseXMLpredictions), but returns
+        //  a one-dimensional array of prediction objects, instead.
+        //  object has the same keys: dirTag, seconds, vehicle, stopTag, routeTag
+      predictionsFlat: function(xml, callback) {
+        var predictions = [];
+        var $pr, prediction;
+        var $rt, routeTag, stopTag;
+
+        $(xml).find('body > predictions').each(function(indx, rt){
+          $rt = $(rt);
+          routeTag = $rt.attr('routeTag');
+          stopTag = $rt.attr('stopTag');
+
+          $(rt).find('prediction').each(function(indx, pr) {
+            $pr = $(pr);
+            prediction = {
+              routeTag: routeTag,
+              stopTag: stopTag,
+              seconds: $pr.attr('seconds'),
+              vehicle: $pr.attr('vehicle'),
+              dirTag: $pr.attr('dirTag')
+            };
+            predictions.push(prediction);
+          });
+        });
+
+        return callback ? callback(predictions) : predictions;
+      },
+
+        // parse vehicleLocations: http://webservices.nextbus.com/service/publicXMLFeed?command=vehicleLocations&a=sf-muni&r=5
+      vehicleLocations: function(xml, callback) {
+        var vehicles = [];
+        var $bus, bus;
+        var lastTime = $(xml).find('lastTime:eq(0)').attr('time');
+
+        $(xml).find('vehicle').each(function(indx, vehicle){
+          $bus = $(vehicle);
+          bus = {
+            id: $bus.attr('id'),
+            routeTag: $bus.attr('routeTag'),
+            dirTag: $bus.attr('dirTag'),
+            lat: $bus.attr('lat'),
+            lon: $bus.attr('lon'),
+            secsSinceReport: $bus.attr('secsSinceReport'),
+            predictable: $bus.attr('predictable'),
+            heading: $bus.attr('heading'),
+            speedKmHr: $bus.attr('speedKmHr'),
+            lastTime: lastTime      // last report time -- in the XML, this is not an attribute on a vehicle
+          };
+
+          vehicles.push(bus);
+        });
+
+        return callback ? callback(vehicles) : vehicles;
+      },
     },
 
-      // does the same parsing as above (parseXMLpredictions), but returns
-      //  a one-dimensional array of prediction objects, instead.
-      //  object has the same keys: dirTag, seconds, vehicle, stopTag, routeTag
-    parseXMLpredictionsFlat: function(xml, callback) {
-      var predictions = [];
-      var $pr, prediction;
-      var $rt, routeTag, stopTag;
-
-      $(xml).find('body > predictions').each(function(indx, rt){
-        $rt = $(rt);
-        routeTag = $rt.attr('routeTag');
-        stopTag = $rt.attr('stopTag');
-
-        $(rt).find('prediction').each(function(indx, pr) {
-          $pr = $(pr);
-          prediction = {
-            routeTag: routeTag,
-            stopTag: stopTag,
-            seconds: $pr.attr('seconds'),
-            vehicle: $pr.attr('vehicle'),
-            dirTag: $pr.attr('dirTag')
-          };
-          predictions.push(prediction);
-        });
-      });
-
-      return callback ? callback(predictions) : predictions;
-    },
 
       // retrieves the list of agencies Nextbus supports
       //  returns an array of objects with keys: agencyTag, title, regionTitle
@@ -229,7 +259,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
         if(errorMsg) {
           deferred.reject(errorMsg);
         } else {
-          var agencies = nb.parseXMLagencyList(xml);
+          var agencies = nb.parseXML.agencyList(xml);
           deferred.resolve(agencies);
           if(callback && _isFunction(callback)) { callback(agencies); }
         }
@@ -269,7 +299,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
           if(errorMsg) {
             deferred.reject(errorMsg);
           } else {
-            var routes = nb.parseXMLrouteList(xml);
+            var routes = nb.parseXML.routeList(xml);
               // cache this info
             if(typeof nb.agencyTag === 'undefined') { nb.agencyTag = agencyTag; }
             if(nb._options.cache && typeof nb.cache[agencyTag] === 'undefined') {
@@ -317,7 +347,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
           } else {
             if(typeof nb.agencyTag === 'undefined') { nb.agencyTag = agencyTag; }
 
-            var routeInfo = nb.parseXMLrouteConfig(xml);
+            var routeInfo = nb.parseXML.routeConfig(xml);
             if(nb._options.cache) {
               if(typeof nb.cache[agencyTag] === 'undefined') { nb.cache[agencyTag] = {}; }
               nb.cache[agencyTag][routeTag] = routeInfo;
@@ -358,7 +388,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
         if(errorMsg) {
           deferred.reject(errorMsg);
         } else {
-          var predictions = nb.parseXMLpredictions(xml);
+          var predictions = nb.parseXML.predictions(xml);
           if(callback && _isFunction(callback)) { callback(predictions); }
           deferred.resolve(predictions);
         }
@@ -402,9 +432,52 @@ var makeNextBusser = function(agencyTag, userOptions) {
         if(errorMsg) {
           deferred.reject(errorMsg);
         } else {
-          var predictions = nb.parseXMLpredictions(xml);
+          var predictions = nb.parseXML.predictions(xml);
           if(callback && _isFunction(callback)) { callback(predictions); }
           deferred.resolve(predictions);
+        }
+      })
+      .fail(function() {
+        deferred.reject();
+      });
+
+      return deferred.promise();
+    },
+
+    vehicleLocations: function(routeQuery, callback) {
+      var deferred = new $.Deferred();
+
+      var routeTag, agencyTag, unixMilli = (new Date()).getTime();
+      if(typeof routeQuery === 'string') {
+        routeTag = routeQuery;
+        agencyTag = nb.agencyTag;
+      } else {
+        routeTag = _findTag(routeQuery, ['r', 'routeTag', 'route']);
+        agencyTag = _findTag(routeQuery, ['a', 'agencyTag', 'agency']);
+      }
+
+      var query = {
+        command: 'vehicleLocations',
+        a: agencyTag,
+        r: routeTag,
+        t: unixMilli
+      };
+      nb.getNextbus(query, function(xml){
+        var errorMsg = nb.hasError(xml);
+        if(errorMsg) {
+          deferred.reject(errorMsg);
+        } else {
+          if(typeof nb.agencyTag === 'undefined') { nb.agencyTag = agencyTag; }
+
+          var vehicleLoc = nb.parseXML.vehicleLocations(xml);
+
+            // add the query time to every vehicle location object
+          for(var i=0; i<vehicleLoc.length; i++) {
+            vehicleLoc[i].queryTime = unixMilli;
+          }
+
+          if(callback && _isFunction(callback)) { callback(vehicleLoc); }
+          deferred.resolve(vehicleLoc);
         }
       })
       .fail(function() {

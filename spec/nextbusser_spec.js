@@ -232,7 +232,6 @@ describe("nextBusser", function() {
           expect(nb1.cache).to.contain.not.keys(routeTag);
           expect(nb1.cache[agencyTag]).to.contain.keys(routeTag);
           expect(nb1.cache[agencyTag][routeTag]).to.contain.keys('stopsInfo','directions');
-          console.log('cache', nb1.cache);
         });
         it("the cached route list and the callback route list are both objects", function() {
           expect(cacheRouteInfo).to.be.instanceof(Object);
@@ -259,10 +258,9 @@ describe("nextBusser", function() {
       describe("should use the cache the second time routeConfig() is called for the same route and agency", function() {
         it("promise should be passed a value from the cache", function(done) {
           cacheRouteInfo.directions = 'promise_test';
-          
+
           var promise = nb1.routeConfig(routeTag);
           promise.done(function(routeInfo) {
-            console.log(routeInfo);
             expect(routeInfo.directions).to.equal('promise_test');
             done();
           });
