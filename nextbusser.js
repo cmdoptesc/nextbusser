@@ -59,10 +59,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
     },
 
     hasError: function(xml) {
-      var errorMsg = '';
-      $(xml).find("body > Error").each(function(indx, err){
-        errorMsg = $(err).text().trim();
-      });
+      var errorMsg = $(xml).find("body > Error:eq(0)").text().trim();
       return (errorMsg.length > 0) ? errorMsg : false;
     },
 
