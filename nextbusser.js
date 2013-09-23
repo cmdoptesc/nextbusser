@@ -45,9 +45,10 @@ var makeNextBusser = function(agencyTag, userOptions) {
   var nb = {
 
     cache: {},
-    _agencyTag: '',
+
     _options: {
-      cache: true
+      cache: true,
+      agencyTag: undefined
     },
 
       // basic nextbus query, check the Nextbus PDF for commands & options
@@ -275,9 +276,9 @@ var makeNextBusser = function(agencyTag, userOptions) {
         // checking inputs
       if(_isFunction(agencyQuery) && typeof callback === 'undefined') {
         callback = agencyQuery;
-        agencyTag = nb._agencyTag;
+        agencyTag = nb._options.agencyTag;
       } else {
-        agencyTag = _findTag(agencyQuery, ['a', 'agencyTag', 'agency']) || nb._agencyTag;
+        agencyTag = _findTag(agencyQuery, ['a', 'agencyTag', 'agency']) || nb._options.agencyTag;
       }
 
         // checking and using cache if agency has been looked up
@@ -298,7 +299,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
           } else {
             var routes = nb.parseXML.routeList(xml);
               // cache this info
-            if(typeof nb._agencyTag === 'undefined') { nb._agencyTag = agencyTag; }
+            if(typeof nb._options.agencyTag === 'undefined') { nb._options.agencyTag = agencyTag; }
             if(nb._options.cache && typeof nb.cache[agencyTag] === 'undefined') {
               nb.cache[agencyTag] = {};
               nb.cache[agencyTag].routeList = routes;
@@ -322,7 +323,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
       var routeTag, agencyTag;
       if(typeof routeQuery === 'string') {
         routeTag = routeQuery;
-        agencyTag = nb._agencyTag;
+        agencyTag = nb._options.agencyTag;
       } else {
         routeTag = _findTag(routeQuery, ['r', 'routeTag', 'route']);
         agencyTag = _findTag(routeQuery, ['a', 'agencyTag', 'agency']);
@@ -342,7 +343,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
           if(errorMsg) {
             deferred.reject(errorMsg);
           } else {
-            if(typeof nb._agencyTag === 'undefined') { nb._agencyTag = agencyTag; }
+            if(typeof nb._options.agencyTag === 'undefined') { nb._options.agencyTag = agencyTag; }
 
             var routeInfo = nb.parseXML.routeConfig(xml);
             if(nb._options.cache) {
@@ -368,15 +369,15 @@ var makeNextBusser = function(agencyTag, userOptions) {
       if(typeof prQuery === 'number') { prQuery += ''; }
       if(typeof prQuery === 'string' && prQuery.length === stopIdLength) {
         query.stopId = prQuery;
-        query.a = nb._agencyTag;
+        query.a = nb._options.agencyTag;
       } else if(typeof prQuery === 'object') {
         if(prQuery.hasOwnProperty('stopId')) {
           query.stopId = prQuery.stopId;
-          query.a = nb._agencyTag;
+          query.a = nb._options.agencyTag;
         } else {
           query.s = _findTag(prQuery, ['s', 'stopTag', 'stop']);
           query.r = _findTag(prQuery, ['r', 'routeTag', 'route']);
-          query.a = _findTag(prQuery, ['a', 'agencyTag', 'agency']) || nb._agencyTag;
+          query.a = _findTag(prQuery, ['a', 'agencyTag', 'agency']) || nb._options.agencyTag;
         }
       }
 
@@ -417,10 +418,10 @@ var makeNextBusser = function(agencyTag, userOptions) {
 
       var agency, stopsArray = [];
       if(_isArray(prQuery)) {
-        agency = nb._agencyTag;
+        agency = nb._options.agencyTag;
         stopsArray = prQuery;
       } else if( typeof prQuery === 'object' && prQuery.hasOwnProperty('stops') ) {
-        agency = _findTag(prQuery, ['a', 'agencyTag', 'agency']) || nb._agencyTag;
+        agency = _findTag(prQuery, ['a', 'agencyTag', 'agency']) || nb._options.agencyTag;
         stopsArray = prQuery.stops;
       }
 
@@ -447,7 +448,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
       var routeTag, agencyTag, unixMilli = (new Date()).getTime();
       if(typeof routeQuery === 'string') {
         routeTag = routeQuery;
-        agencyTag = nb._agencyTag;
+        agencyTag = nb._options.agencyTag;
       } else {
         routeTag = _findTag(routeQuery, ['r', 'routeTag', 'route']);
         agencyTag = _findTag(routeQuery, ['a', 'agencyTag', 'agency']);
@@ -464,7 +465,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
         if(errorMsg) {
           deferred.reject(errorMsg);
         } else {
-          if(typeof nb._agencyTag === 'undefined') { nb._agencyTag = agencyTag; }
+          if(typeof nb._options.agencyTag === 'undefined') { nb._options.agencyTag = agencyTag; }
 
           var vehicleLoc = nb.parseXML.vehicleLocations(xml);
 
@@ -487,9 +488,9 @@ var makeNextBusser = function(agencyTag, userOptions) {
 
     setAgency: function(agencyTag) {
       if(typeof agencyTag === 'string') {
-        nb._agencyTag = agencyTag;
+        nb._options.agencyTag = agencyTag;
       } else if(agencyTag.hasOwnProperty('a') || agencyTag.hasOwnProperty('agencyTag')) {
-        nb._agencyTag = agencyTag.a || agencyTag.agencyTag;
+        nb._options.agencyTag = agencyTag.a || agencyTag.agencyTag;
       }
     }
   };
