@@ -18,11 +18,13 @@ describe("nextBusser", function() {
       var noArgs = makeNextBusser();
       expect(noArgs._options.cache).to.equal(true);
     });
-    it("should accepted as the first or second argument when instantiating", function() {
-      var nb1 = makeNextBusser('agency-name', {cache: false});
-      var nb2 = makeNextBusser({cache: false});
-
+    it("should be accepted as the first argument when instantiating", function() {
+      var nb1 = makeNextBusser({cache: false});
       expect(nb1._options.cache).to.equal(false);
+    });
+    it("should be accepted as the second argument when instantiating", function() {
+      var agencyTag = 'sf-muni';
+      var nb2 = makeNextBusser(agencyTag, {cache: false});
       expect(nb2._options.cache).to.equal(false);
     });
   });
