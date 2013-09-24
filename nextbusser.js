@@ -33,7 +33,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
     if(typeof obj === 'string') { return obj; }
     if(typeof obj === 'object') {
       for(var i=0; i<keys.length; i++) {
-        if(obj.hasOwnProperty(keys[i]) && typeof obj[keys[i]] === 'string') {
+        if( obj.hasOwnProperty(keys[i]) && (typeof obj[keys[i]] === 'string' || typeof obj[keys[i]] === 'number') ) {
           return obj[keys[i]];
         }
       }
@@ -296,6 +296,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
           var errorMsg = nb.hasError(xml);
           if(errorMsg) {
             deferred.reject(errorMsg);
+            throw new Error(errorMsg);
           } else {
             var routes = nb.parseXML.routeList(xml);
               // cache this info
@@ -342,6 +343,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
           var errorMsg = nb.hasError(xml);
           if(errorMsg) {
             deferred.reject(errorMsg);
+            throw new Error(errorMsg);
           } else {
             if(typeof nb._options.agencyTag === 'undefined') { nb._options.agencyTag = agencyTag; }
 
@@ -373,20 +375,20 @@ var makeNextBusser = function(agencyTag, userOptions) {
       } else if(typeof prQuery === 'object') {
         if(prQuery.hasOwnProperty('stopId')) {
           query.stopId = prQuery.stopId;
-          query.a = nb._options.agencyTag;
         } else {
           query.s = _findTag(prQuery, ['s', 'stopTag', 'stop']);
           query.r = _findTag(prQuery, ['r', 'routeTag', 'route']);
-          query.a = _findTag(prQuery, ['a', 'agencyTag', 'agency']) || nb._options.agencyTag;
         }
+        query.a = _findTag(prQuery, ['a', 'agencyTag', 'agency']) || nb._options.agencyTag;
       }
 
       nb.getNextbus(query, function(xml){
         var errorMsg = nb.hasError(xml);
         if(errorMsg) {
           deferred.reject(errorMsg);
+          throw new Error(errorMsg);
         } else {
-          var predictions = nb.parseXML.predictions(xml);
+          var predictions = (typeof prQuery.flatten !== 'undefined' && prQuery.flatten === true) ? nb.parseXML.predictionsFlat(xml) : nb.parseXML.predictions(xml);
           if(callback && _isFunction(callback)) { callback(predictions); }
           deferred.resolve(predictions);
         }
@@ -429,8 +431,9 @@ var makeNextBusser = function(agencyTag, userOptions) {
         var errorMsg = nb.hasError(xml);
         if(errorMsg) {
           deferred.reject(errorMsg);
+          throw new Error(errorMsg);
         } else {
-          var predictions = nb.parseXML.predictions(xml);
+          var predictions = (typeof prQuery.flatten !== 'undefined' && prQuery.flatten === true) ? nb.parseXML.predictionsFlat(xml) : nb.parseXML.predictions(xml);
           if(callback && _isFunction(callback)) { callback(predictions); }
           deferred.resolve(predictions);
         }
@@ -492,6 +495,19 @@ var makeNextBusser = function(agencyTag, userOptions) {
       } else if(agencyTag.hasOwnProperty('a') || agencyTag.hasOwnProperty('agencyTag')) {
         nb._options.agencyTag = agencyTag.a || agencyTag.agencyTag;
       }
+
+        // check if the agency is valid.. error message currently does not display useful callstack
+      var query = {
+        command: 'routeList',
+        a: agencyTag
+      };
+      nb.getNextbus(query, function(xml){
+        var errorMsg = nb.hasError(xml);
+        if(errorMsg) {
+          throw new Error(errorMsg);
+          nb._options.agencyTag = '';
+        }
+      });
     }
   };
 
