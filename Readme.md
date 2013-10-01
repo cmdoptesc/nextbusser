@@ -4,9 +4,7 @@ nextBusser is a JavaScript library to query the NextBus API ([pdf doc](http://ww
 
 Callbacks can be provided to the functions, or they will return a basic jQuery promise that will have the methods `.then()`, `.done()`, and `.fail()`.
 
-An early version of nextbusser was used for my muniNow app:  
-  [demo](http://bl.ocks.org/cmdoptesc/raw/6224455/)  
-  [github](http://github.com/cmdoptesc/muninow)  
+An earlier version of nextbusser was used for my [muniNow app](http://bl.ocks.org/cmdoptesc/raw/6224455/) ([repo](http://github.com/cmdoptesc/muninow)).  
 
 # Usage
 
@@ -33,8 +31,7 @@ function callerback(routes) {
 jQuery 1.10.x or 2.x
 
 ## Further Work
-- add in schedule  
-- add in vehicle locations  
+- add in schedule
 
 
 

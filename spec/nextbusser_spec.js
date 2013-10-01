@@ -1,4 +1,14 @@
 describe("nextBusser", function() {
+  var settings = {};
+  settings.agencyTag = 'sf-muni';
+  settings.routeTag = 5;
+  settings.stopTag = '5684';
+  settings.stopId = 15684;
+  settings.routeTag2 = '38';
+  settings.stopTag2 = '5684';
+  settings.routeTagStr = settings.routeTag + '';
+  settings.stopTagStr = settings.stopTag + '';
+  settings.routeTag2Str = settings.routeTag2 + '';
 
   describe("should have the methods: agencyList, routeList, routeConfig, predictions, predictionsMulti", function() {
     var nb = makeNextBusser();
@@ -23,8 +33,7 @@ describe("nextBusser", function() {
       expect(nb1._options.cache).to.equal(false);
     });
     it("should be accepted as the second argument when instantiating", function() {
-      var agencyTag = 'sf-muni';
-      var nb2 = makeNextBusser(agencyTag, {cache: false});
+      var nb2 = makeNextBusser(settings.agencyTag, {cache: false});
       expect(nb2._options.cache).to.equal(false);
     });
   });
@@ -58,8 +67,7 @@ describe("nextBusser", function() {
   });
 
   describe("routeList()", function() {
-    var agencyTag = 'sf-muni';
-    var nb = makeNextBusser(agencyTag);
+    var nb = makeNextBusser(settings.agencyTag);
     var promise;
 
     it("should return a promise", function() {
@@ -84,13 +92,13 @@ describe("nextBusser", function() {
     });
 
     describe("caching", function() {
-      var nb1 = makeNextBusser(agencyTag);
+      var nb1 = makeNextBusser(settings.agencyTag);
       var callbackRoutes;
       var cacheRoutes;
       before(function(done) {
         nb1.routeList(function(routes) {
           callbackRoutes = routes;
-          cacheRoutes = nb1.cache[agencyTag].routeList;
+          cacheRoutes = nb1.cache[settings.agencyTag].routeList;
           done();
         });
       });
@@ -100,9 +108,9 @@ describe("nextBusser", function() {
           expect(nb1._options.cache).to.equal(true);
         });
         it("the cached routes list is stored under an agencyTag key on the cache", function() {
-          expect(nb1.cache).to.contain.keys(agencyTag);
+          expect(nb1.cache).to.contain.keys(settings.agencyTag);
           expect(nb1.cache).to.contain.not.keys('blahblahblahbalh');
-          expect(nb1.cache[agencyTag]).to.contain.keys('routeList');
+          expect(nb1.cache[settings.agencyTag]).to.contain.keys('routeList');
         });
         it("the cached routes list and the callback routes list are both arrays", function() {
           expect(cacheRoutes).to.be.instanceof(Array);
@@ -120,7 +128,7 @@ describe("nextBusser", function() {
 
       describe("should use the cache the second time routeList() is called for the same agency", function() {
         it("promise should be passed a value from the cache", function(done) {
-          nb1.cache[agencyTag].routeList[3] = 'promise_test';
+          nb1.cache[settings.agencyTag].routeList[3] = 'promise_test';
           
           var promise = nb1.routeList();
           promise.done(function(list) {
@@ -129,9 +137,9 @@ describe("nextBusser", function() {
           });
         });
         it("callback should be passed a value from the cache", function(done) {
-          var oldval0 = JSON.stringify(nb1.cache[agencyTag].routeList[0]);
-          var oldval1 = JSON.stringify(nb1.cache[agencyTag].routeList[1]);
-          nb1.cache[agencyTag].routeList[0] = 'flagged_for_test';
+          var oldval0 = JSON.stringify(nb1.cache[settings.agencyTag].routeList[0]);
+          var oldval1 = JSON.stringify(nb1.cache[settings.agencyTag].routeList[1]);
+          nb1.cache[settings.agencyTag].routeList[0] = 'flagged_for_test';
 
           nb1.routeList(function(routes) {
             expect(JSON.stringify(routes[0])).to.not.equal(oldval0);
@@ -144,7 +152,7 @@ describe("nextBusser", function() {
       });
 
       describe("should not store anything on the cache if the cache option is set to false", function() {
-        var nb2 = makeNextBusser(agencyTag, {cache: false});
+        var nb2 = makeNextBusser(settings.agencyTag, {cache: false});
 
         it("cache is set to false", function() {
           expect(nb2._options.cache).to.equal(false);
@@ -154,7 +162,7 @@ describe("nextBusser", function() {
 
           nb2.routeList(function(routes) {
             expect(nb2.cache).to.be.empty;
-            expect(nb2.cache).to.not.contain.keys(agencyTag);
+            expect(nb2.cache).to.not.contain.keys(settings.agencyTag);
             done();
           });
         });
@@ -180,15 +188,14 @@ describe("nextBusser", function() {
   });
 
   describe("routeConfig()", function() {
-    var agencyTag = 'sf-muni';
-    var routeTag = '5';
-    var nb = makeNextBusser(agencyTag);
+    var nb = makeNextBusser(settings.agencyTag);
     var promise;
 
     it("should return a promise", function() {
-      promise = nb.routeConfig(routeTag);
+      promise = nb.routeConfig(settings.routeTag);
       expect(promise).to.contain.keys('then','done','fail');
     });
+
     it('should pass to the promise an object representing the route information with keys "stopsInfo" and "directions"', function(done) {
       promise.done(function(routeInfo) {
         expect(routeInfo).to.be.instanceof(Object);
@@ -201,7 +208,7 @@ describe("nextBusser", function() {
     });
 
     it('should also accept a callback function and pass it the object containing route information', function(done) {
-      nb.routeConfig(routeTag, function(routeInfoCb) {
+      nb.routeConfig(settings.routeTag, function(routeInfoCb) {
         expect(routeInfoCb).to.be.instanceof(Object);
         expect(routeInfoCb).to.contain.keys('stopsInfo','directions');
         expect(routeInfoCb.stopsInfo).to.be.instanceof(Object);
@@ -213,14 +220,46 @@ describe("nextBusser", function() {
       });
     });
 
+    it("should accept an object with keys 'r' and 'a' representing route and agency for its route arguments", function(done) {
+      nb.routeConfig({r: settings.routeTag, a: settings.agencyTag}, function(routeInfoCb) {
+        expect(routeInfoCb).to.be.instanceof(Object);
+        expect(routeInfoCb).to.contain.keys('stopsInfo','directions');
+        done();
+      });
+    });
+    it("should accept an object with only key 'r' for its route argument if the agency has already been set", function(done) {
+      nb.setAgency(settings.agencyTag);
+      nb.routeConfig({r: settings.routeTag}, function(routeInfoCb) {
+        expect(routeInfoCb).to.be.instanceof(Object);
+        expect(routeInfoCb).to.contain.keys('stopsInfo','directions');
+        done();
+      });
+    });
+    it('should also accept numbers for its route arguments if the agency has already been set', function(done) {
+      nb.setAgency(settings.agencyTag);
+      nb.routeConfig(settings.routeTagStr, function(routeInfoCb) {
+        expect(routeInfoCb).to.be.instanceof(Object);
+        expect(routeInfoCb).to.contain.keys('stopsInfo','directions');
+        done();
+      });
+    });
+    it('should also accept strings for its route arguments if the agency has already been set', function(done) {
+      nb.setAgency(settings.agencyTag);
+      nb.routeConfig(settings.routeTagStr, function(routeInfoCb) {
+        expect(routeInfoCb).to.be.instanceof(Object);
+        expect(routeInfoCb).to.contain.keys('stopsInfo','directions');
+        done();
+      });
+    });
+
     describe("caching", function() {
-      var nb1 = makeNextBusser(agencyTag);
+      var nb1 = makeNextBusser(settings.agencyTag);
       var callbackRouteInfo;
       var cacheRouteInfo;
       before(function(done) {
-        nb1.routeConfig(routeTag, function(routeInfo) {
+        nb1.routeConfig(settings.routeTag, function(routeInfo) {
           callbackRouteInfo = routeInfo;
-          cacheRouteInfo = nb1.cache[agencyTag][routeTag];
+          cacheRouteInfo = nb1.cache[settings.agencyTag][settings.routeTag];
           done();
         });
       });
@@ -230,10 +269,10 @@ describe("nextBusser", function() {
           expect(nb1._options.cache).to.equal(true);
         });
         it("the cached route list is stored under the agencyTag, then routeTag on the cache", function() {
-          expect(nb1.cache).to.contain.keys(agencyTag);
-          expect(nb1.cache).to.contain.not.keys(routeTag);
-          expect(nb1.cache[agencyTag]).to.contain.keys(routeTag);
-          expect(nb1.cache[agencyTag][routeTag]).to.contain.keys('stopsInfo','directions');
+          expect(nb1.cache).to.contain.keys(settings.agencyTag);
+          expect(nb1.cache).to.contain.not.keys(settings.routeTag);
+          expect(nb1.cache[settings.agencyTag]).to.contain.keys(settings.routeTagStr);
+          expect(nb1.cache[settings.agencyTag][settings.routeTag]).to.contain.keys('stopsInfo','directions');
         });
         it("the cached route list and the callback route list are both objects", function() {
           expect(cacheRouteInfo).to.be.instanceof(Object);
@@ -261,7 +300,7 @@ describe("nextBusser", function() {
         it("promise should be passed a value from the cache", function(done) {
           cacheRouteInfo.directions = 'promise_test';
 
-          var promise = nb1.routeConfig(routeTag);
+          var promise = nb1.routeConfig(settings.routeTag);
           promise.done(function(routeInfo) {
             expect(routeInfo.directions).to.equal('promise_test');
             done();
@@ -270,7 +309,7 @@ describe("nextBusser", function() {
         it("callback should be passed a value from the cache", function(done) {
           cacheRouteInfo.stopsInfo.routeTag = 'callerbackyoungin';
 
-          nb1.routeConfig(routeTag, function(routeInfo) {
+          nb1.routeConfig(settings.routeTag, function(routeInfo) {
             expect(routeInfo.stopsInfo.routeTag).to.equal('callerbackyoungin');
             done();
           });
@@ -278,7 +317,7 @@ describe("nextBusser", function() {
       });
 
       describe("should not store anything on the cache if the cache option is set to false", function() {
-        var nb2 = makeNextBusser(agencyTag, {cache: false});
+        var nb2 = makeNextBusser(settings.agencyTag, {cache: false});
 
         it("cache is set to false", function() {
           expect(nb2._options.cache).to.equal(false);
@@ -286,14 +325,14 @@ describe("nextBusser", function() {
         it("nothing is stored to the cache", function(done) {
           expect(nb2.cache).to.be.empty;
 
-          nb2.routeConfig(routeTag, function(routeInfo) {
+          nb2.routeConfig(settings.routeTag, function(routeInfo) {
             expect(nb2.cache).to.be.empty;
-            expect(nb2.cache).to.not.contain.keys(agencyTag);
+            expect(nb2.cache).to.not.contain.keys(settings.agencyTag);
             done();
           });
         });
         it("still passes a value (an object of route information) to the promise, while not caching", function(done) {
-          var promise2 = nb2.routeConfig(routeTag);
+          var promise2 = nb2.routeConfig(settings.routeTag);
           promise2.done(function(routeInfo) {
             expect(nb2.cache).to.be.empty;
             expect(routeInfo).to.be.instanceof(Object);
@@ -302,7 +341,7 @@ describe("nextBusser", function() {
           });
         });
         it("still passes a value to the callback", function(done) {
-          nb2.routeConfig(routeTag, function(infoCallback) {
+          nb2.routeConfig(settings.routeTag, function(infoCallback) {
             expect(nb2.cache).to.be.empty;
             expect(infoCallback).to.be.instanceof(Object);
             expect(infoCallback).to.contain.keys('stopsInfo','directions');
@@ -310,7 +349,205 @@ describe("nextBusser", function() {
           });
         });
       });
-
     });
   });
+
+  describe("predictions()", function() {
+    var nb = makeNextBusser(settings.agencyTag);
+    var promise;
+
+    it("should return a promise", function() {
+      promise = nb.predictions({r: settings.routeTag, s: settings.stopTag});
+      expect(promise).to.contain.keys('then','done','fail');
+    });
+    it("should pass to the promise an array of prediction objects for the specified route and stop tag.", function(done) {
+      promise.done(function(predictions) {
+        expect(predictions).to.be.instanceof(Array);
+        expect(predictions[0]).to.contain.keys('routeTag','stopTag','dirTag','seconds','vehicle');
+        expect(predictions[0].routeTag).to.equal(settings.routeTagStr);
+        expect(predictions[0].stopTag).to.equal(settings.stopTagStr);
+        done();
+      });
+    });
+    it("should also accept a callback and pass it the the array of prediction objects", function(done) {
+      nb.predictions({r: settings.routeTag, s: settings.stopTag, flatten: true}, function(cbPredictions) {
+        expect(cbPredictions).to.be.instanceof(Array);
+        expect(cbPredictions[0]).to.contain.keys('routeTag','stopTag','dirTag','seconds','vehicle');
+        expect(cbPredictions[0].routeTag).to.equal(settings.routeTagStr);
+        expect(cbPredictions[0].stopTag).to.equal(settings.stopTagStr);
+        done();
+      });
+    });
+    describe("flatten: false", function() {
+      var nonFlatPromise = nb.predictions({r: settings.routeTag, s: settings.stopTag, flatten: false});
+
+      it("should pass to the promise an object (instead of an array). This object will be similar in structure to the one used in predictionsMulti()", function(done) {
+        nonFlatPromise.done(function(prediction) {
+          expect(prediction).to.be.instanceof(Object);
+          done();
+        });
+      });
+      it("should structure the object by having the stop tag as a key, and nested underneath the route tag as a key, with an array of prediction objects as the value", function(done) {
+        nonFlatPromise.done(function(prediction) {
+          expect(prediction).to.be.instanceof(Object);
+          expect(prediction[settings.stopTag]).to.be.instanceof(Object);
+          expect(prediction[settings.stopTag][settings.routeTag]).to.be.instanceof(Array);
+          expect(prediction[settings.stopTag][settings.routeTag][0]).to.be.instanceof(Object);
+          expect(prediction[settings.stopTag][settings.routeTag][0]).to.contain.keys('routeTag','stopTag','dirTag','seconds','vehicle');
+          done();
+        });
+      });
+      it("should also accept a callback and pass it the same object as the promise", function(done) {
+        nb.predictions({r: settings.routeTag, s: settings.stopTag, flatten: false}, function(cbObject) {
+          expect(cbObject).to.be.instanceof(Object);
+          expect(cbObject[settings.stopTag]).to.be.instanceof(Object);
+          expect(cbObject[settings.stopTag][settings.routeTag]).to.be.instanceof(Array);
+          expect(cbObject[settings.stopTag][settings.routeTag][0]).to.be.instanceof(Object);
+          expect(cbObject[settings.stopTag][settings.routeTag][0]).to.contain.keys('routeTag','stopTag','dirTag','seconds','vehicle');
+          expect(cbObject[settings.stopTag][settings.routeTag][0].routeTag).to.equal(settings.routeTagStr);
+          expect(cbObject[settings.stopTag][settings.routeTag][0].stopTag).to.equal(settings.stopTagStr);
+          done();
+        });
+      });
+    });
+  });
+  describe("predictionsMulti()", function() {
+    var nb = makeNextBusser(settings.agencyTag);
+    var promise;
+    var stops = [{r: settings.routeTag, s: settings.stopTag}, {r: settings.routeTag2, s: settings.stopTag2}];
+
+    describe("passing in an array of stops for the argument", function() {
+
+      it("should return a promise", function() {
+        promise = nb.predictionsMulti(stops);
+        expect(promise).to.contain.keys('then','done','fail');
+      });
+      it("should pass to the promise an array of prediction objects for the specified routes and stops.", function(done) {
+        promise.done(function(predictions) {
+          expect(predictions).to.be.instanceof(Array);
+          expect(predictions[0]).to.contain.keys('routeTag','stopTag','dirTag','seconds','vehicle');
+
+          var hasRoute1 = false, hasRoute2 = false;
+
+          for(var i=0; i<predictions.length; i++) {
+            if(predictions[i].routeTag === settings.routeTagStr) { hasRoute1 = true; }
+            if(predictions[i].routeTag === settings.routeTag2Str) { hasRoute2 = true; }
+          }
+
+          expect(hasRoute1).to.equal(true);
+          expect(hasRoute2).to.equal(true);
+          done();
+        });
+      });
+      it("should also accept a callback and pass it the the array of prediction objects", function(done) {
+        nb.predictionsMulti(stops, function(predictions) {
+          expect(predictions).to.be.instanceof(Array);
+          expect(predictions[0]).to.contain.keys('routeTag','stopTag','dirTag','seconds','vehicle');
+
+          var hasRoute1 = false, hasRoute2 = false;
+
+          for(var i=0; i<predictions.length; i++) {
+            if(predictions[i].routeTag === settings.routeTagStr) { hasRoute1 = true; }
+            if(predictions[i].routeTag === settings.routeTag2Str) { hasRoute2 = true; }
+          }
+
+          expect(hasRoute1).to.equal(true);
+          expect(hasRoute2).to.equal(true);
+          done();
+        });
+      });
+    });
+
+    describe('passing in an object for the argument', function() {
+      var queryObj = { stops: stops };
+      var promise2;
+
+      it("should return a promise", function() {
+        promise2 = nb.predictionsMulti(queryObj);
+        expect(promise).to.contain.keys('then','done','fail');
+      });
+      it("should pass to the promise an array of prediction objects for the specified routes and stops.", function(done) {
+        promise2.done(function(predictions) {
+          expect(predictions).to.be.instanceof(Array);
+          expect(predictions[0]).to.contain.keys('routeTag','stopTag','dirTag','seconds','vehicle');
+
+          var hasRoute1 = false, hasRoute2 = false;
+
+          for(var i=0; i<predictions.length; i++) {
+            if(predictions[i].routeTag === settings.routeTagStr) { hasRoute1 = true; }
+            if(predictions[i].routeTag === settings.routeTag2Str) { hasRoute2 = true; }
+          }
+
+          expect(hasRoute1).to.equal(true);
+          expect(hasRoute2).to.equal(true);
+          done();
+        });
+      });
+      it("should also accept a callback and pass it the the array of prediction objects", function(done) {
+        nb.predictionsMulti(queryObj, function(predictions) {
+          expect(predictions).to.be.instanceof(Array);
+          expect(predictions[0]).to.contain.keys('routeTag','stopTag','dirTag','seconds','vehicle');
+
+          var hasRoute1 = false, hasRoute2 = false;
+
+          for(var i=0; i<predictions.length; i++) {
+            if(predictions[i].routeTag === settings.routeTagStr) { hasRoute1 = true; }
+            if(predictions[i].routeTag === settings.routeTag2Str) { hasRoute2 = true; }
+          }
+
+          expect(hasRoute1).to.equal(true);
+          expect(hasRoute2).to.equal(true);
+          done();
+        });
+      });
+      it("array passed to the promise/callback should be similar the one passed by using an array for the arguments", function(done) {
+        var promiseFromArray = nb.predictionsMulti(stops);
+        var promiseFromObj = nb.predictionsMulti(queryObj);
+
+        promiseFromArray.done(function(predictionsFromArray){
+          promiseFromObj.done(function(predictionsFromObj){
+            expect(predictionsFromArray.length).to.equal(predictionsFromObj.length);
+            expect(predictionsFromArray[0].routeTag).to.equal(predictionsFromObj[0].routeTag);
+            expect(predictionsFromArray[0].stopTag).to.equal(predictionsFromObj[0].stopTag);
+            done();
+          });
+        });
+      });
+      describe("flatten: false", function() {
+        var flatQuery = { stops: stops, flatten: false };
+        var nonFlatPromise = nb.predictionsMulti(flatQuery);
+
+        it("should pass to the promise an object", function(done) {
+          nonFlatPromise.done(function(prediction) {
+            expect(prediction).to.be.instanceof(Object);
+            done();
+          });
+        });
+        it("should structure the object by having the stop tag as a key, and nested underneath the route tag as a key, with an array of prediction objects as the value", function(done) {
+          nonFlatPromise.done(function(prediction) {
+            expect(prediction).to.be.instanceof(Object);
+            expect(prediction[settings.stopTag]).to.be.instanceof(Object);
+            expect(prediction[settings.stopTag][settings.routeTag]).to.be.instanceof(Array);
+            expect(prediction[settings.stopTag][settings.routeTag][0]).to.be.instanceof(Object);
+            expect(prediction[settings.stopTag][settings.routeTag][0]).to.contain.keys('routeTag','stopTag','dirTag','seconds','vehicle');
+            done();
+          });
+        });
+        it("should also accept a callback and pass it the same object as the promise", function(done) {
+          nb.predictionsMulti(flatQuery, function(cbObject) {
+            expect(cbObject).to.be.instanceof(Object);
+            expect(cbObject[settings.stopTag]).to.be.instanceof(Object);
+            expect(cbObject[settings.stopTag][settings.routeTag]).to.be.instanceof(Array);
+            expect(cbObject[settings.stopTag][settings.routeTag][0]).to.be.instanceof(Object);
+            expect(cbObject[settings.stopTag][settings.routeTag][0]).to.contain.keys('routeTag','stopTag','dirTag','seconds','vehicle');
+            expect(cbObject[settings.stopTag][settings.routeTag][0].routeTag).to.equal(settings.routeTagStr);
+            expect(cbObject[settings.stopTag][settings.routeTag][0].stopTag).to.equal(settings.stopTagStr);
+            done();
+          });
+        });
+      });
+    });
+  });
+
+
 });

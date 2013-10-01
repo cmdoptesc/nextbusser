@@ -48,7 +48,8 @@ var makeNextBusser = function(agencyTag, userOptions) {
 
     _options: {
       cache: true,
-      agencyTag: undefined
+      agencyTag: undefined,
+      flatten: true
     },
 
       // basic nextbus query, check the Nextbus PDF for commands & options
@@ -322,12 +323,13 @@ var makeNextBusser = function(agencyTag, userOptions) {
       var deferred = new $.Deferred();
 
       var routeTag, agencyTag;
+      if(typeof routeQuery === 'number') { routeQuery += ''; }
       if(typeof routeQuery === 'string') {
         routeTag = routeQuery;
         agencyTag = nb._options.agencyTag;
       } else {
         routeTag = _findTag(routeQuery, ['r', 'routeTag', 'route']);
-        agencyTag = _findTag(routeQuery, ['a', 'agencyTag', 'agency']);
+        agencyTag = _findTag(routeQuery, ['a', 'agencyTag', 'agency']) || nb._options.agencyTag;
       }
 
       if(nb._options.cache && typeof nb.cache[agencyTag] !== 'undefined' && typeof nb.cache[agencyTag][routeTag] !== 'undefined') {
@@ -388,7 +390,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
           deferred.reject(errorMsg);
           throw new Error(errorMsg);
         } else {
-          var predictions = (typeof prQuery.flatten !== 'undefined' && prQuery.flatten === true) ? nb.parseXML.predictionsFlat(xml) : nb.parseXML.predictions(xml);
+          var predictions = ((nb._options.flatten && typeof prQuery.flatten === 'undefined') || (typeof prQuery.flatten !== 'undefined' && prQuery.flatten === true)) ? nb.parseXML.predictionsFlat(xml) : nb.parseXML.predictions(xml);
           if(callback && _isFunction(callback)) { callback(predictions); }
           deferred.resolve(predictions);
         }
@@ -433,7 +435,7 @@ var makeNextBusser = function(agencyTag, userOptions) {
           deferred.reject(errorMsg);
           throw new Error(errorMsg);
         } else {
-          var predictions = (typeof prQuery.flatten !== 'undefined' && prQuery.flatten === true) ? nb.parseXML.predictionsFlat(xml) : nb.parseXML.predictions(xml);
+          var predictions = ((nb._options.flatten && typeof prQuery.flatten === 'undefined') || (typeof prQuery.flatten !== 'undefined' && prQuery.flatten === true)) ? nb.parseXML.predictionsFlat(xml) : nb.parseXML.predictions(xml);
           if(callback && _isFunction(callback)) { callback(predictions); }
           deferred.resolve(predictions);
         }
